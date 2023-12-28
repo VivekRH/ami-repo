@@ -1,0 +1,46 @@
+---
+
+name: "AMI for production and its deployment"
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Repository checkout"
+        uses: actions/checkout@v3
+
+      - name: "Packer Installation"
+        uses: hashicorp/setup-packer@main
+        with:
+          version: "1.9.4"
+
+      - name: "Initializing Packer"
+        run: packer init ./packer/
+
+      - name: "Validating Packer"
+        run: packer validate -var-file="production.pkrvars.hcl" . 
+        working-directory: ./packer/
+
+      - name: "Formatting Packer Files"
+        run: packer fmt .
+        working-directory: ./packer
+
+      - name: "Building Images"
+        run: packer build -var-file="production.pkrvars.hcl" .
+        working-directory: ./packer/
+        env: 
+          AWS_ACCESS_KEY_ID: ${{ secrets.prod_access_key }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.prod_secret_key }}
+          AWS_DEFAULT_REGION: ${{ secrets.prod_region }}
+     
+      - name: "Triggering actions on prod infra repository"
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          token: $ {{ secrets.prod_infra_trigger_token }} 
+          

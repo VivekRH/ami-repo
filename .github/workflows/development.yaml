@@ -1,0 +1,51 @@
+---
+
+name: "AMI for shoppingapp development and its deployment"
+
+on:
+  push:
+    branches:
+      - development
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.DEV_ACCESS_KEY }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.DEV_SECRET_KEY }}
+      AWS_DEFAULT_REGION: ${{ secrets.DEV_REGION }}
+    
+    steps:
+
+      - name: "Repository checkout"
+        uses: actions/checkout@v3
+
+      - name: "Packer Installation"
+        uses: hashicorp/setup-packer@main
+        id: setup
+        with:
+          version: "1.9.4"
+
+      - name: "Initializing Packer"
+        run: packer init .
+        working-directory: ./packer/
+
+      - name: "Validating Packer"
+        run: packer validate -var-file="dev.pkrvars.hcl" .
+        working-directory: ./packer/
+
+      - name: "Formatting Packer Files"
+        run: packer fmt -var-file="dev.pkrvars.hcl" .
+        working-directory: ./packer/
+
+      - name: "Building Images"
+        run: packer build -var-file="dev.pkrvars.hcl" .
+        working-directory: ./packer/
+      
+      - name: "Triggering Actions in infra repository"
+        uses: peter-evans/repository-dispatch@v2
+        with: 
+          token: $ {{ secrets.PAT }}
+          repository: VivekRH/infra-repo
+          event-type: dev-ami-deploy-event
