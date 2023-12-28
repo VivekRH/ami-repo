@@ -46,6 +46,6 @@ jobs:
       - name: "Triggering Actions in infra repository"
         uses: peter-evans/repository-dispatch@v2
         with: 
-          token: $ {{ secrets.PAT }}
+          token: $ {{ secrets.INFRA_TRIGGER_TOKEN }}
           repository: VivekRH/infra-repo
           event-type: dev-ami-deploy-event
