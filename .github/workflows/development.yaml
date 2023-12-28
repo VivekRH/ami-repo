@@ -43,7 +43,7 @@ jobs:
         run: packer build -var-file="dev.pkrvars.hcl" .
         working-directory: ./packer/
       
-      - name: "Triggering Actions in infra repository"
+      - name: "Triggering Actions in infra repo"
         uses: peter-evans/repository-dispatch@v2
         with: 
           token: $ {{ secrets.INFRA_TRIGGER_TOKEN }}
